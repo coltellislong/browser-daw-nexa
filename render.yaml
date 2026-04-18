@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: browser-daw-nexa
+    runtime: node
+    plan: free
+    buildCommand: echo "no build needed"
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
