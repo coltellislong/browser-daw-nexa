@@ -3,8 +3,12 @@ services:
     name: browser-daw-nexa
     runtime: node
     plan: free
-    buildCommand: echo "no build needed"
+    repo: https://github.com/coltellislong/browser-daw-nexa
+    branch: main
+    rootDir: .
+    buildCommand: npm install --omit=dev
     startCommand: node server.js
+    healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
