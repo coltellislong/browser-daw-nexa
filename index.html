@@ -848,6 +848,29 @@ body {
 
 .pin-version { position: fixed; bottom: 14px; font-size: 11px; color: var(--ink-soft); opacity: .5; }
 
+/* ─── Sample preview button ──────────────────────────────────── */
+.preview-btn {
+  flex-shrink: 0;
+  width: 18px; height: 18px; border-radius: 4px;
+  border: 1px solid var(--chrome-bd);
+  background: var(--chrome);
+  color: var(--ink-soft);
+  display: grid; place-items: center;
+  cursor: pointer;
+  box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 -1px 0 rgba(0,0,0,.1) inset;
+  transition: all .1s;
+  padding: 0;
+}
+.preview-btn:hover {
+  background: linear-gradient(180deg, #c7f7df, #4fd089 50%, #25a362 50%, #68e39d);
+  border-color: #1a6a3e; color: #0a2a18;
+}
+.preview-btn-on {
+  background: linear-gradient(180deg, #aef7cb, #4fd089 50%, #25a362 50%, #68e39d);
+  border-color: #1a6a3e; color: #0a2a18;
+  box-shadow: 0 0 6px rgba(80,220,130,.6), 0 1px 0 rgba(255,255,255,.6) inset;
+}
+
 </style>
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -1414,6 +1437,7 @@ function App() {
   const [masterVol, setMasterVol] = useState(0.78);
   const [driveOpen, setDriveOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [audioSettingsOpen, setAudioSettingsOpen] = useState(false);
   const [prClip, setPrClip] = useState(null);
   const [driveFolder, setDriveFolder] = useState(null); // array of sample names
   const [toast, setToast] = useState(null);
@@ -1600,6 +1624,14 @@ function App() {
             <span style={{ fontFamily: "Consolas, monospace", fontSize: 12, fontWeight: 700 }}>4/4</span>
           </div>
           <div className="spacer"/>
+          <button className="btn" onClick={() => setAudioSettingsOpen(true)} title="Audio Output Settings">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4">
+              <path d="M1 4h3l2.5-2.5v10L4 9H1V4z"/>
+              <path d="M8.5 5a2.5 2.5 0 010 3.5" opacity=".7"/>
+              <path d="M10.5 3.5a5 5 0 010 6" opacity=".4"/>
+            </svg>
+            Audio Out
+          </button>
           <button className="btn" onClick={() => setDriveOpen(true)}>
             <span style={{
               width: 14, height: 12, display: "inline-block",
@@ -1634,12 +1666,9 @@ function App() {
               </div>
               <div className="folder-items">
                 {driveFolder.map((s, i) => (
-                  <div key={i} className="sample"
-                    draggable
+                  <SampleRow key={i} name={s}
                     onDragStart={() => setDrag({ name: s, fromDrive: true })}
-                    onDragEnd={() => setDrag(null)}>
-                    <span className="wave"/> {s}
-                  </div>
+                    onDragEnd={() => setDrag(null)}/>
                 ))}
               </div>
             </div>
@@ -1760,6 +1789,7 @@ function App() {
         </div>
       </div>
 
+      {audioSettingsOpen && <AudioSettingsModal onClose={() => setAudioSettingsOpen(false)}/>}
       {driveOpen && <DriveImportModal onClose={() => setDriveOpen(false)}
         onImport={(files) => { setDriveFolder(files); setDriveOpen(false); setToast(`Imported ${files.length} samples from Drive`); setTimeout(() => setToast(null), 2800); }}/>}
       {exportOpen && <ExportModal onClose={() => setExportOpen(false)} onDone={() => { setExportOpen(false); setToast("Demo downloaded"); setTimeout(() => setToast(null), 2500); }}/>}
@@ -1797,6 +1827,41 @@ function AeroOrbs({ intensity }) {
   );
 }
 
+function SampleRow({ name, onDragStart, onDragEnd }) {
+  const [previewing, setPreviewing] = useState(false);
+
+  const handlePreview = (e) => {
+    e.stopPropagation();
+    if (previewing) {
+      stopPreview();
+      setPreviewing(false);
+    } else {
+      previewSample(name);
+      setPreviewing(true);
+      // Auto-reset after preview duration
+      const isDrum = /kick|snare|hat|clap|tom|perc|rim|snap/i.test(name);
+      setTimeout(() => setPreviewing(false), isDrum ? 350 : 1300);
+    }
+  };
+
+  return (
+    <div className="sample" draggable onDragStart={() => { stopPreview(); setPreviewing(false); onDragStart(name); }} onDragEnd={onDragEnd}>
+      <button
+        className={`preview-btn${previewing ? ' preview-btn-on' : ''}`}
+        onClick={handlePreview}
+        title={previewing ? 'Stop preview' : 'Preview sample'}
+      >
+        {previewing
+          ? <svg width="8" height="8" viewBox="0 0 8 8"><rect x="1" y="1" width="2.5" height="6" fill="currentColor"/><rect x="4.5" y="1" width="2.5" height="6" fill="currentColor"/></svg>
+          : <svg width="8" height="8" viewBox="0 0 8 8"><path d="M1 1L7 4L1 7V1Z" fill="currentColor"/></svg>
+        }
+      </button>
+      <span className="wave"/>
+      {name}
+    </div>
+  );
+}
+
 function BrowserFolders({ onDragStart, onDragEnd }) {
   const [folders, setFolders] = useState(BROWSER_FOLDERS);
   const toggle = (i) => {
@@ -1818,13 +1883,7 @@ function BrowserFolders({ onDragStart, onDragEnd }) {
           </div>
           <div className="folder-items">
             {f.samples.map((s, j) => (
-              <div key={j} className="sample"
-                draggable
-                onDragStart={() => onDragStart(s)}
-                onDragEnd={onDragEnd}>
-                <span className="wave"/>
-                {s}
-              </div>
+              <SampleRow key={j} name={s} onDragStart={onDragStart} onDragEnd={onDragEnd}/>
             ))}
           </div>
         </div>
@@ -2095,6 +2154,166 @@ function TweaksPanel({ open, tweaks, setTweak }) {
 }
 
 
+// ─── Audio Settings Modal ──────────────────────────────────────
+function AudioSettingsModal({ onClose }) {
+  const [devices, setDevices] = React.useState([]);
+  const [selectedId, setSelectedId] = React.useState('default');
+  const [supported, setSupported] = React.useState(true);
+  const [testPlaying, setTestPlaying] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!navigator.mediaDevices?.enumerateDevices) { setSupported(false); return; }
+    navigator.mediaDevices.enumerateDevices().then(all => {
+      const outs = all.filter(d => d.kind === 'audiooutput');
+      if (outs.length === 0) {
+        setDevices([{ deviceId: 'default', label: 'System Default (MacBook Speakers)' }]);
+      } else {
+        setDevices(outs);
+      }
+    }).catch(() => setSupported(false));
+  }, []);
+
+  const applyDevice = async (id) => {
+    setSelectedId(id);
+    // setSinkId is Chrome/Edge only; store for future AudioContext use
+    window.__audioSinkId = id;
+    // Apply to any existing audio elements
+    document.querySelectorAll('audio').forEach(el => {
+      if (el.setSinkId) el.setSinkId(id).catch(() => {});
+    });
+  };
+
+  const playTest = () => {
+    setTestPlaying(true);
+    const ctx = new AudioContext();
+    if (window.__audioSinkId && ctx.setSinkId) {
+      ctx.setSinkId(window.__audioSinkId).catch(() => {});
+    }
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 440;
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.8);
+    osc.onended = () => { ctx.close(); setTestPlaying(false); };
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal glass" style={{ width: 460 }} onClick={e => e.stopPropagation()}>
+        <div className="m-head">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/>
+          </svg>
+          <span>Audio Output Settings</span>
+          <div style={{ flex: 1 }}/>
+          <button className="btn" onClick={onClose} style={{ padding: "2px 10px" }}>✕</button>
+        </div>
+        <div className="m-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {!supported ? (
+            <div style={{ padding: '10px 0', color: 'var(--ink-soft)', fontSize: 13 }}>
+              Audio output selection requires Chrome or Edge. Your browser will use the system default output (MacBook speakers).
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="field-label">Output Device</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6 }}>
+                  {devices.length === 0 && (
+                    <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
+                      No output devices found — your MacBook speakers are being used.
+                    </div>
+                  )}
+                  {devices.map(d => (
+                    <label key={d.deviceId} style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '8px 12px', borderRadius: 8, cursor: 'pointer',
+                      background: selectedId === d.deviceId
+                        ? 'linear-gradient(180deg, #aef7cb, #4fd089 50%, #25a362 50%, #68e39d)'
+                        : 'linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.2))',
+                      border: `1px solid ${selectedId === d.deviceId ? '#1a6a3e' : 'rgba(255,255,255,.7)'}`,
+                      fontSize: 13, fontWeight: selectedId === d.deviceId ? 700 : 400,
+                      color: selectedId === d.deviceId ? '#0a2a18' : 'var(--ink)',
+                      transition: 'all .15s',
+                    }} onClick={() => applyDevice(d.deviceId)}>
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M2 5h4l3-3v12l-3-3H2V5z"/>
+                        <path d="M11 6a3 3 0 010 4" opacity={selectedId === d.deviceId ? 1 : .4}/>
+                        <path d="M13 4a5.5 5.5 0 010 8" opacity={selectedId === d.deviceId ? .6 : .2}/>
+                      </svg>
+                      {d.label || `Output ${d.deviceId.slice(0, 8)}`}
+                      {selectedId === d.deviceId && <span style={{ marginLeft: 'auto', fontSize: 11 }}>✓ Active</span>}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div style={{
+                background: 'linear-gradient(180deg, rgba(255,255,255,.4), rgba(255,255,255,.1))',
+                border: '1px solid rgba(255,255,255,.6)', borderRadius: 8, padding: '10px 12px',
+                fontSize: 11.5, color: 'var(--ink-soft)', lineHeight: 1.6
+              }}>
+                <b style={{ color: 'var(--ink)' }}>MacBook speakers</b> are used by default. For headphones or external interfaces, connect the device and re-open this panel to see it appear.
+              </div>
+            </>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button className={`btn${testPlaying ? ' primary' : ''}`} onClick={playTest} disabled={testPlaying}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 1.5L10 6L2 10.5V1.5Z" fill="currentColor"/>
+              </svg>
+              {testPlaying ? 'Playing…' : 'Test Tone (A4)'}
+            </button>
+            <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>Plays a 440 Hz sine wave to verify output</span>
+          </div>
+        </div>
+        <div className="m-foot">
+          <button className="btn primary" onClick={onClose}>Done</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Browser Sample Preview ─────────────────────────────────────
+let _previewCtx = null;
+let _previewNode = null;
+
+function stopPreview() {
+  try { _previewNode && _previewNode.stop(); } catch(_) {}
+  _previewNode = null;
+}
+
+function previewSample(name) {
+  stopPreview();
+  _previewCtx = _previewCtx || new AudioContext();
+  if (window.__audioSinkId && _previewCtx.setSinkId) {
+    _previewCtx.setSinkId(window.__audioSinkId).catch(() => {});
+  }
+  // Generate a tone character based on sample name hash
+  const hash = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  const freqs = [130.8, 146.8, 164.8, 174.6, 196, 220, 246.9, 261.6, 293.7, 329.6, 349.2, 392, 440, 493.9, 523.3];
+  const freq = freqs[hash % freqs.length];
+  const isDrum = /kick|snare|hat|clap|tom|perc|rim|snap/i.test(name);
+  const isBass = /bass|sub|808/i.test(name);
+
+  const osc = _previewCtx.createOscillator();
+  const gain = _previewCtx.createGain();
+  osc.type = isDrum ? 'sawtooth' : isBass ? 'triangle' : 'sine';
+  osc.frequency.setValueAtTime(isDrum ? freq * 0.5 : freq, _previewCtx.currentTime);
+  if (isDrum) osc.frequency.exponentialRampToValueAtTime(20, _previewCtx.currentTime + 0.15);
+  gain.gain.setValueAtTime(0.35, _previewCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, _previewCtx.currentTime + (isDrum ? 0.3 : 1.2));
+  osc.connect(gain);
+  gain.connect(_previewCtx.destination);
+  osc.start();
+  osc.stop(_previewCtx.currentTime + (isDrum ? 0.3 : 1.2));
+  _previewNode = osc;
+}
+
 // ─── PIN Screen ────────────────────────────────────────────────
 function PinScreen({ onUnlock }) {
   const [pin, setPin] = React.useState('');
@@ -2102,7 +2321,7 @@ function PinScreen({ onUnlock }) {
   const [unlocking, setUnlocking] = React.useState(false);
 
   const press = React.useCallback((d) => {
-    if (unlocking || pin.length >= 8) return;
+    if (unlocking || pin.length >= 3) return;
     setPin(p => p + d);
     setError(false);
   }, [pin, unlocking]);
@@ -2133,7 +2352,12 @@ function PinScreen({ onUnlock }) {
     return () => window.removeEventListener('keydown', down);
   }, [press, backspace, submit]);
 
-  const dotCount = Math.max(3, pin.length + (unlocking ? 0 : 1));
+  // Auto-submit once 3 digits are entered
+  React.useEffect(() => {
+    if (pin.length === 3) submit();
+  }, [pin]);
+
+  const dotCount = 3;
 
   return (
     <div className={`pin-screen${unlocking ? ' unlocking' : ''}`}>

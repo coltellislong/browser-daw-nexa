@@ -840,3 +840,26 @@ body {
 @keyframes pin-fadein { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
 
 .pin-version { position: fixed; bottom: 14px; font-size: 11px; color: var(--ink-soft); opacity: .5; }
+
+/* ─── Sample preview button ──────────────────────────────────── */
+.preview-btn {
+  flex-shrink: 0;
+  width: 18px; height: 18px; border-radius: 4px;
+  border: 1px solid var(--chrome-bd);
+  background: var(--chrome);
+  color: var(--ink-soft);
+  display: grid; place-items: center;
+  cursor: pointer;
+  box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 -1px 0 rgba(0,0,0,.1) inset;
+  transition: all .1s;
+  padding: 0;
+}
+.preview-btn:hover {
+  background: linear-gradient(180deg, #c7f7df, #4fd089 50%, #25a362 50%, #68e39d);
+  border-color: #1a6a3e; color: #0a2a18;
+}
+.preview-btn-on {
+  background: linear-gradient(180deg, #aef7cb, #4fd089 50%, #25a362 50%, #68e39d);
+  border-color: #1a6a3e; color: #0a2a18;
+  box-shadow: 0 0 6px rgba(80,220,130,.6), 0 1px 0 rgba(255,255,255,.6) inset;
+}
