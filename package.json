@@ -6,8 +6,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "build": "echo 'No build step required'",
-    "start": "node server.js",
-    "dev": "node server.js"
+    "build": "echo done",
+    "start": "node server.js"
   }
 }

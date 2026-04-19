@@ -3,10 +3,8 @@ services:
     name: browser-daw-nexa
     runtime: node
     plan: free
-    repo: https://github.com/coltellislong/browser-daw-nexa
     branch: main
-    rootDir: .
-    buildCommand: npm install --omit=dev
+    buildCommand: yarn install
     startCommand: node server.js
     healthCheckPath: /
     envVars:
